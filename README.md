@@ -229,13 +229,60 @@ Engine's own tests. There is no browser-side mode: the credential stays on the s
 See [docs/usage-guide.md](docs/usage-guide.md) for the complete developer guide and
 [skills/sea-flow-sdk-go/SKILL.md](skills/sea-flow-sdk-go/SKILL.md) for the Agent skill.
 
-<script type="text/plain" data-doc-skill data-doc-skill-id="sea-flow-sdk-go" data-doc-skill-label="SeaFlow Go SDK" data-doc-skill-filename="sea-flow-sdk-go-SKILL.md" data-doc-skill-version="1">
+<script type="text/plain" data-doc-skill data-doc-skill-id="sea-flow-sdk-go" data-doc-skill-label="Sea Flow SDK Go" data-doc-skill-filename="sea-flow-sdk-go-SKILL.md" data-doc-skill-version="1">
 ---
 name: sea-flow-sdk-go
-description: Build and troubleshoot SeaFlow integrations with the Go SDK. Use when creating, publishing, copying, or running workflows, browsing templates and models, or diagnosing Production Key and end-user attribution errors.
+description: Implement or troubleshoot server-side SeaFlow workflow integrations with the Go SDK. Use for template, workspace, workflow, run, model, asset, or record operations; do not use for browser clients.
 ---
-# SeaFlow Go SDK
+
+# Sea Flow SDK Go
+
 Use `github.com/SeaArt-Infra/sea-flow-sdk-go` with Go 1.24.3+.
-Create one client with `BaseURL` and `ProductionKey`, then use `WithEndUser` for the current product user. Requests carry `Authorization: Bearer <ProductionKey>` and `X-Infra-User-Id`; never add `production_provider`.
-Route groups: `TemplateCatalog`, `Templates`, `Workspaces`, `Workflows`, `Runs`, `Models`, `Assets`, and `Records`.
+
+## Scope
+
+- Use this SDK from server code only. Keep `ProductionKey` in the host
+  application's existing secret mechanism; do not expose it to a browser.
+- Use the SDK rather than duplicating its REST transport or adding a
+  `production_provider` request field.
+- Read `docs/usage-guide.md` before using a resource method not covered here.
+
+## Client and identity
+
+```go
+import (
+	"os"
+
+	seaflowsdk "github.com/SeaArt-Infra/sea-flow-sdk-go"
+)
+
+client := seaflowsdk.NewClient(seaflowsdk.ClientOptions{
+	BaseURL:       os.Getenv("SEA_FLOW_BASE_URL"),
+	ProductionKey: os.Getenv("SEA_FLOW_SDK_PRODUCTION_KEY"),
+})
+user := client.WithEndUser(currentUserID)
+```
+
+- Construct one shared client per server configuration. `WithEndUser` returns a
+  copy with a different `X-Infra-User-Id`; it does not change project ownership.
+- Workspaces, workflows, templates, assets, and records belong to the project
+  bound to the credential. End-user identity scopes run activity, not ownership.
+
+## Workflow changes
+
+- Standard write flow: create or copy a workspace workflow, `Save` its complete
+  graph and name, `Publish`, then `CreateRun`.
+- `Workflows.Save` replaces both name and graph. For a partial change, read the
+  workflow first and preserve the field that is not changing.
+- Treat `GraphNode.Data` as opaque JSON. Preserve canvas layout and unknown node
+  fields during read-modify-write operations.
+- `CreateRun` schedules asynchronous work. A concurrent active run can return a
+  conflict; do not retry it blindly.
+
+## Errors
+
+- `ErrMissingBaseURL`, `ErrMissingProductionKey`, and `ErrMissingIdentifier`
+  are local errors before a request. Use `errors.Is` to distinguish them.
+- API failures are `*APIError`. Use `IsNotFound` and `IsConflict` for 404 and
+  409 handling; use `errors.As` when the caller needs the error details.
 </script>
