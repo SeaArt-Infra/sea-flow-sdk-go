@@ -18,7 +18,8 @@ client := seaflowsdk.NewClient(seaflowsdk.ClientOptions{
 `APIBaseURL` only for a non-standard mount or an isolated test server.
 `ProductionKey` is the single project credential and is sent on every request as
 `Authorization: Bearer <key>`. `EndUserID` becomes `X-Infra-User-Id`; it is an
-opaque caller identifier and is not a second credential.
+opaque identifier derived from the integrating product's authenticated user,
+not a second credential.
 
 `WithEndUser` returns an independent client view that shares the HTTP client:
 
@@ -77,12 +78,18 @@ one field. A runtime-input graph must pass values in `CreateRunRequest`.
   `ListRuns`, and `CreateRun` manage canvases and execution snapshots.
 - `Runs.Get` and `Stop` read or stop an execution.
 - `Models.List` returns the live model catalog.
-- `Assets.List` and `Records.List` read project-scoped outputs and replayable
+- `Assets.List` and `Records.List` read the end user's outputs and replayable
   history.
 
-Workspaces, canvases, assets, and records follow the Production Key's project.
-Runs are separated by `EndUserID`. Do not send `production_provider`; SeaFlow
-resolves it from the onboarded project bound to the key.
+The Production Key authenticates the project and `EndUserID` scopes private
+workspaces, draft canvases, assets, records, and runs inside it. The same
+end-user ID in another project is isolated. Published templates are a shared
+catalog: callers may list, read, and copy them, while only their creator may
+manage an entry. Resources created without `EndUserID` remain project-shared;
+SeaFlow cannot safely infer their historical end user. Omit `EndUserID` only
+for a shared project workspace; it is required to start a project-scoped run.
+Do not send `production_provider`; SeaFlow resolves it from the onboarded
+project bound to the key.
 
 ## Graphs and identifiers
 

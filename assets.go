@@ -10,10 +10,9 @@ type AssetsResource struct {
 
 // List lists the produced assets of the caller identity, newest first.
 //
-// Ownership follows the credential, not the end user: with the Production Key the
-// list spans every end user of that project (the Engine records a workspace's
-// creator as the project). Only runs are separated per end user. The result
-// therefore never contains another project's assets.
+// With EndUserID, the list includes only that end user's outputs inside the
+// project bound to the Production Key. The result never contains another
+// project's or end user's assets.
 func (r *AssetsResource) List(ctx context.Context, options ListAssetsOptions) ([]Asset, error) {
 	query := QueryParams{
 		"workspaceId": options.WorkspaceID,

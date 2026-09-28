@@ -4,9 +4,9 @@ import "context"
 
 // WorkspacesResource groups canvases.
 //
-// A workspace belongs to the caller identity: with the Production Key that is the
-// project, so every end user of the product shares the project's workspaces. An
-// end user separates runs, not canvases (ADR-0005, ADR-0010).
+// With EndUserID, a workspace belongs to that end user inside the project bound
+// to the Production Key. Omitting EndUserID retains the project's shared
+// workspace (ADR-0005, ADR-0010).
 type WorkspacesResource struct {
 	transport *Transport
 }

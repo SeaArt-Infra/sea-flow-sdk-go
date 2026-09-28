@@ -20,9 +20,9 @@ type ClientOptions struct {
 	// sent as Authorization: Bearer <token> on every request.
 	ProductionKey string
 	// EndUserID is the default end-user identifier sent as
-	// `X-Infra-User-Id`. The Engine stores it as an opaque identifier and never
-	// resolves it to an account (ADR-0010). Override per request with
-	// WithEndUser.
+	// `X-Infra-User-Id`. It scopes private SeaFlow resources inside the project
+	// bound to ProductionKey; derive it from the integrating product's
+	// authenticated user (ADR-0010). Override per request with WithEndUser.
 	EndUserID string
 	// Headers are extra headers sent on every request.
 	Headers map[string]string

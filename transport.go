@@ -23,7 +23,8 @@ const defaultHTTPTimeout = 60 * time.Second
 const maxFallbackMessageBytes = 4 << 10
 
 // EndUserHeader is the header the Engine reads the integrating product's end
-// user from (ADR-0010). It is set from ClientOptions.EndUserID.
+// user from (ADR-0010). It scopes private project resources and is set from
+// ClientOptions.EndUserID.
 const EndUserHeader = "X-Infra-User-Id"
 
 var (

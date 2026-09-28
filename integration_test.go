@@ -141,7 +141,13 @@ func TestEngineEndToEnd(t *testing.T) {
 		t.Errorf("saved generation node model = %v", saved.Graph.Nodes[1].Data["model"])
 	}
 
-	// 5. Publish it, which mints the immutable version a run executes (ADR-0007).
+	// 5. Draft workflows are private to the end user that created them.
+	otherUser := client.WithEndUser("sdk-e2e-other-end-user")
+	if _, err := otherUser.Workflows.Get(ctx, created.ID); !IsNotFound(err) {
+		t.Errorf("another end user read a private draft: err = %v, want 404", err)
+	}
+
+	// 5b. Publish it, which mints the immutable version a run executes (ADR-0007).
 	published, err := client.Workflows.Publish(ctx, created.ID)
 	if err != nil {
 		t.Fatalf("publish workflow: %v", err)
@@ -150,6 +156,11 @@ func TestEngineEndToEnd(t *testing.T) {
 		t.Errorf("published workflow = %+v, want a publishedVersionId", published)
 	}
 	t.Logf("published version %s", published.PublishedVersionID)
+
+	// Published workflows are visible to callers on the same production line.
+	if _, err := otherUser.Workflows.Get(ctx, created.ID); err != nil {
+		t.Errorf("another end user did not read the published workflow: %v", err)
+	}
 
 	// 6. Reads that must agree with the writes.
 	workflows, err := client.Workflows.List(ctx, ListOptions{Limit: 100})
